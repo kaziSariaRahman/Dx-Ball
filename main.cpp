@@ -38,6 +38,36 @@ void drawCircleMidpoint(int cx,int cy,int r){
     glEnd();
 }
 
+// ── Filled Circle (GL_TRIANGLE_FAN) ───────────
+void drawFilledCircle(float cx,float cy,float r){
+    // GL built-in GL_TRIANGLE_FAN
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(cx,cy);
+    for(int i=0;i<=360;i++){
+        float a=i*3.14159f/180.0f;
+        glVertex2f(cx+r*cos(a),cy+r*sin(a));
+    }
+    glEnd();
+}
+
+// ── Helper: filled rect (GL_QUADS) ────────────
+void fillRect(float x,float y,float w,float h){
+    // GL built-in
+    glBegin(GL_QUADS);
+    glVertex2f(x,y);     glVertex2f(x+w,y);
+    glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+    glEnd();
+}
+
+// ── Helper: outline rect (GL_LINE_LOOP) ───────
+void outlineRect(float x,float y,float w,float h){
+    // GL built-in
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x,y);     glVertex2f(x+w,y);
+    glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+    glEnd();
+}
+
 
 // ── OpenGL init ───────────────────────────────
 void openGLInit(){
