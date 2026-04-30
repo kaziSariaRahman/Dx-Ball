@@ -76,6 +76,40 @@ void openGLInit(){
     gluOrtho2D(0,WIN_W,0,WIN_H);
     glMatrixMode(GL_MODELVIEW);  glLoadIdentity();
 }
+// ── GLUT keyboard input ───────────────────────
+void keyboardInput(unsigned char key,int x,int y){
+    if(key==27) exit(0);
+    if(gameState==0){
+        if(key=='1'){startNewGame();gameState=1;}
+        if(key=='2') gameState=6;
+        if(key=='3') gameState=5;
+        if(key=='4') exit(0);
+    }
+    else if(gameState==5||gameState==6){if(key=='m'||key=='M')gameState=0;}
+    else if(gameState==1){
+        if(key==' ')           ballMoving=1;
+        if(key=='p'||key=='P') gameState=2;
+        if(key=='a'||key=='A'){paddleX-=20;if(paddleX<0)paddleX=0;}
+        if(key=='d'||key=='D'){paddleX+=20;if(paddleX+paddleW>WIN_W)paddleX=WIN_W-paddleW;}
+        if(key=='z'||key=='Z'){
+            // shoot bullet
+            for(int i=0;i<MAX_BULLETS;i++){
+                if(!bltAlive[i]){bltX[i]=paddleX+paddleW/2;bltY[i]=paddleY+paddleH+5;bltAlive[i]=1;break;}
+            }
+        }
+    }
+    else if(gameState==2){
+        if(key=='p'||key=='P') gameState=1;
+        if(key=='r'||key=='R'){startNewGame();gameState=1;}
+        if(key=='m'||key=='M') gameState=0;
+    }
+    else if(gameState==3||gameState==4){
+        if(key=='r'||key=='R'){startNewGame();gameState=1;}
+        if(key=='m'||key=='M') gameState=0;
+    }
+    glutPostRedisplay();
+}
+
 
 int main(int argc,char**argv){
     srand((unsigned)time(NULL));
