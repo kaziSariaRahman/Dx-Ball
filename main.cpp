@@ -76,6 +76,27 @@ void openGLInit(){
     gluOrtho2D(0,WIN_W,0,WIN_H);
     glMatrixMode(GL_MODELVIEW);  glLoadIdentity();
 }
+// ── DRAW: menu screen ─────────────────────────
+void drawMenuScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0.05f,0.05f,0.2f,1); glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1,.8f,0);
+    drawText(320,500,"DX  BALL",GLUT_BITMAP_TIMES_ROMAN_24);
+    // Bresenham Line decorative separator
+    glColor3f(0.5f,0.5f,1.0f); drawLineBres(280,488,520,488);
+    glColor3f(.3f,1,.3f);  drawText(340,430,"1.  START GAME",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(.3f,.7f,1);  drawText(340,390,"2.  HIGH SCORE",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,.9f,.3f);  drawText(340,350,"3.  HELP",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,.4f,.4f);  drawText(340,310,"4.  EXIT",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(.6f,.6f,.6f);
+    drawText(210,200,"Mouse / Arrow Keys  =  Move Paddle",GLUT_BITMAP_HELVETICA_12);
+    drawText(210,180,"SPACE or Click      =  Launch Ball",GLUT_BITMAP_HELVETICA_12);
+    drawText(210,160,"Z=Shoot  P=Pause  ESC=Exit",GLUT_BITMAP_HELVETICA_12);
+    // Midpoint Circle Algorithm decorative ball
+    glColor3f(1.0f,0.9f,0.0f); drawFilledCircle(400,560,15);
+    glColor3f(1,1,1); drawCircleMidpoint(400,560,15);
+}
+
 // ── GLUT keyboard input ───────────────────────
 void keyboardInput(unsigned char key,int x,int y){
     if(key==27) exit(0);
