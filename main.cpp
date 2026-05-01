@@ -76,6 +76,40 @@ void openGLInit(){
     gluOrtho2D(0,WIN_W,0,WIN_H);
     glMatrixMode(GL_MODELVIEW);  glLoadIdentity();
 }
+// ── DRAW: help screen ─────────────────────────
+void drawHelpScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0,0.05f,0.15f,1); glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1,.8f,0); drawText(330,560,"HOW TO PLAY",GLUT_BITMAP_TIMES_ROMAN_24);
+    // Bresenham Line separator
+    glColor3f(0.5f,0.8f,0.5f); drawLineBres(40,550,760,550);
+    glColor3f(.5f,1,1); drawText(40,525,"--- CONTROLS ---",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,1,1);
+    drawText(40,500,"Left/Right Arrow  OR  A/D   :  Move Paddle",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,482,"Mouse Move                  :  Move Paddle",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,464,"SPACE  or  Left Click       :  Launch Ball",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,446,"Z                           :  Shoot Bullet (SHOT perk needed)",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,428,"P                           :  Pause / Resume",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,410,"ESC                         :  Exit",GLUT_BITMAP_HELVETICA_12);
+    glColor3f(.5f,1,.5f); drawText(40,382,"--- BRICK TYPES ---",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(.8f,.8f,.8f); drawText(40,360,"GREY (WALL)  :  Needs 3 hits. Shows HP number.",GLUT_BITMAP_HELVETICA_12);
+    glColor3f(1,1,.3f);     drawText(40,342,"COLORED      :  1 hit to break. May drop a perk.",GLUT_BITMAP_HELVETICA_12);
+    glColor3f(1,.5f,1); drawText(40,312,"--- DROP ITEMS ---",GLUT_BITMAP_HELVETICA_18);
+    float dc[7][3]={{1,.4f,0},{.4f,.4f,1},{1,0,0},{.8f,0,.8f},{0,1,1},{0,1,0},{1,1,0}};
+    const char*di[]={"FIRE  :  Ball destroys all bricks, no bounce!",
+                     "THRU  :  Ball passes through bricks!",
+                     "DIE!  :  AVOID - instant life lost!",
+                     "SHRK  :  AVOID - paddle shrinks!",
+                     "SHOT  :  Shoot bullets with Z key!",
+                     "+LIF  :  Gain an extra life!",
+                     "EXP   :  Paddle gets bigger!"};
+    for(int i=0;i<7;i++){glColor3f(dc[i][0],dc[i][1],dc[i][2]);drawText(40,288-i*19,di[i],GLUT_BITMAP_HELVETICA_12);}
+    glColor3f(1,.8f,0); drawText(40,155,"--- SCORING ---",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,1,1);
+    drawText(40,133,"Top rows give more points. Ball speeds up every 5 bricks.",GLUT_BITMAP_HELVETICA_12);
+    drawText(40,115,"Break ALL colored bricks to WIN!",GLUT_BITMAP_HELVETICA_12);
+    glColor3f(.6f,.6f,.6f); drawText(300,35,"Press M to go back to Menu",GLUT_BITMAP_HELVETICA_18);
+}
 // ── DRAW: menu screen ─────────────────────────
 void drawMenuScreen(){
     // GL built-in background + GLUT fonts
