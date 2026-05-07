@@ -176,6 +176,21 @@ void drawGameOverScreen(){
     glColor3f(0.5f,1.0f,0.5f);
     drawText(235,220,"R = Restart    M = Menu    ESC = Exit",GLUT_BITMAP_HELVETICA_18);
 }
+ DRAW: high score screen 
+void drawHighScoreScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0.05f,0.05f,0.2f,1); glClear(GL_COLOR_BUFFER_BIT);
+    char buf[32];
+    glColor3f(1,.8f,0); drawText(295,410,"HIGH  SCORE",GLUT_BITMAP_TIMES_ROMAN_24);
+    // Bresenham Line separator
+    glColor3f(0.5f,0.5f,1.0f); drawLineBres(250,398,550,398);
+    glColor3f(.3f,1,.3f); sprintf(buf,"%d",highScore);
+    drawText(370,330,buf,GLUT_BITMAP_TIMES_ROMAN_24);
+    // Midpoint Circle Algorithm decoration
+    glColor3f(1,.9f,0); drawFilledCircle(400,240,30);
+    glColor3f(1,1,1);   drawCircleMidpoint(400,240,30);
+    glColor3f(.6f,.6f,.6f); drawText(300,150,"Press M to go back to Menu",GLUT_BITMAP_HELVETICA_18);
+}
 
 
 int main(int argc,char**argv){
