@@ -164,6 +164,18 @@ void keyboardInput(unsigned char key,int x,int y){
     }
     glutPostRedisplay();
 }
+// ── DRAW: game over screen ────────────────────
+void drawGameOverScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0.1f,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
+    char buf[64];
+    glColor3f(1.0f,0.2f,0.2f); drawText(295,370,"GAME  OVER",GLUT_BITMAP_TIMES_ROMAN_24);
+    glColor3f(1,1,1);
+    sprintf(buf,"Final Score :  %d",score); drawText(295,310,buf,GLUT_BITMAP_HELVETICA_18);
+    sprintf(buf,"High Score  :  %d",highScore); drawText(295,280,buf,GLUT_BITMAP_HELVETICA_18);
+    glColor3f(0.5f,1.0f,0.5f);
+    drawText(235,220,"R = Restart    M = Menu    ESC = Exit",GLUT_BITMAP_HELVETICA_18);
+}
 
 
 int main(int argc,char**argv){
