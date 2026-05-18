@@ -146,6 +146,61 @@ void openGLInit(){
     gluOrtho2D(0,WIN_W,0,WIN_H);
     glMatrixMode(GL_MODELVIEW);  glLoadIdentity();
 }
+// ── INIT: bricks ──────────────────────────────
+void setupBricks(){
+    totalNormal=0;
+    for(int r=0;r<ROWS;r++){
+        for(int c=0;c<COLS;c++){
+            if(r==0){bType[r][c]=2;bHP[r][c]=3;}
+            else    {bType[r][c]=1;bHP[r][c]=1;totalNormal++;}
+        }
+    }
+    remaining=totalNormal;
+}
+
+// ── INIT: full new game ────────────────────────
+void startNewGame(){
+    paddleX=(WIN_W-paddleW)/2.0f; paddleW=100;
+    score=0; lives=3; shootMode=0; shootTimer=0;
+    for(int i=0;i<MAX_DROPS;i++)   dAlive[i]=0;
+    for(int i=0;i<MAX_BULLETS;i++) bltAlive[i]=0;
+    setupBricks();
+    ballX=paddleX+paddleW/2; ballY=paddleY+paddleH+ballR+1;
+    ballSX=3.5f; ballSY=4.5f; ballMoving=0;
+    fireMode=0; fireTimer=0; thruMode=0; thruTimer=0;
+}
+
+// ── DRAW: paddle ──────────────────────────────
+void drawPaddle(){
+    // GL built-in GL_QUADS
+    if(shootMode) glColor3f(0.0f,1.0f,1.0f);
+    else          glColor3f(0.3f,0.5f,1.0f);
+    fillRect(paddleX,paddleY,paddleW,paddleH);
+    glColor3f(1,1,1); outlineRect(paddleX,paddleY,paddleW,paddleH);
+    // Bresenham Line for shine effect on paddle
+    glColor3f(0.8f,0.9f,1.0f);
+    drawLineBres((int)paddleX+4,(int)(paddleY+paddleH-3),
+                 (int)(paddleX+paddleW-4),(int)(paddleY+paddleH-3));
+}
+
+// ── DRAW: HUD ─────────────────────────────────
+void drawHUD(){
+    // GLUT built-in bitmap fonts
+    char buf[64];
+    glColor3f(1,1,1);
+    sprintf(buf,"Score: %d",score);
+    drawText(10,WIN_H-22,buf,GLUT_BITMAP_HELVETICA_18);
+    sprintf(buf,"Lives: %d",lives);
+    drawText(WIN_W-130,WIN_H-22,buf,GLUT_BITMAP_HELVETICA_18);
+    sprintf(buf,"Best: %d",highScore);
+    drawText(WIN_W/2-35,WIN_H-22,buf,GLUT_BITMAP_HELVETICA_18);
+    int ty=WIN_H-45;
+    if(fireMode) {glColor3f(1,.5f,0);sprintf(buf,"FIREBALL:%ds",fireTimer/60);drawText(10,ty,buf,GLUT_BITMAP_HELVETICA_12);ty-=15;}
+    if(thruMode) {glColor3f(.4f,.4f,1);sprintf(buf,"THROUGH:%ds",thruTimer/60);drawText(10,ty,buf,GLUT_BITMAP_HELVETICA_12);ty-=15;}
+    if(shootMode){glColor3f(0,1,1);sprintf(buf,"SHOOT:%ds",shootTimer/60);drawText(10,ty,buf,GLUT_BITMAP_HELVETICA_12);}
+    if(notifTime>0){glColor3f(1,1,0);drawText(WIN_W/2-(int)strlen(notifMsg)*4,110,notifMsg,GLUT_BITMAP_HELVETICA_18);}
+}
+
 // ── DRAW: drop items ──────────────────────────
 void drawDropItems(){
     // GL built-in GL_QUADS
@@ -168,6 +223,27 @@ void drawBullets(){
         if(!bltAlive[i]) continue;
         fillRect(bltX[i]-2,bltY[i],4,10);
     }
+}
+
+// ── DRAW: menu screen ─────────────────────────
+void drawMenuScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0.05f,0.05f,0.2f,1); glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1,.8f,0);
+    drawText(320,500,"DX  BALL",GLUT_BITMAP_TIMES_ROMAN_24);
+    // Bresenham Line decorative separator
+    glColor3f(0.5f,0.5f,1.0f); drawLineBres(280,488,520,488);
+    glColor3f(.3f,1,.3f);  drawText(340,430,"1.  START GAME",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(.3f,.7f,1);  drawText(340,390,"2.  HIGH SCORE",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,.9f,.3f);  drawText(340,350,"3.  HELP",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1,.4f,.4f);  drawText(340,310,"4.  EXIT",GLUT_BITMAP_HELVETICA_18);
+    glColor3f(.6f,.6f,.6f);
+    drawText(210,200,"Mouse / Arrow Keys  =  Move Paddle",GLUT_BITMAP_HELVETICA_12);
+    drawText(210,180,"SPACE or Click      =  Launch Ball",GLUT_BITMAP_HELVETICA_12);
+    drawText(210,160,"Z=Shoot  P=Pause  ESC=Exit",GLUT_BITMAP_HELVETICA_12);
+    // Midpoint Circle Algorithm decorative ball
+    glColor3f(1.0f,0.9f,0.0f); drawFilledCircle(400,560,15);
+    glColor3f(1,1,1); drawCircleMidpoint(400,560,15);
 }
 
 // ── DRAW: help screen ─────────────────────────
@@ -204,25 +280,81 @@ void drawHelpScreen(){
     drawText(40,115,"Break ALL colored bricks to WIN!",GLUT_BITMAP_HELVETICA_12);
     glColor3f(.6f,.6f,.6f); drawText(300,35,"Press M to go back to Menu",GLUT_BITMAP_HELVETICA_18);
 }
-// ── DRAW: menu screen ─────────────────────────
-void drawMenuScreen(){
+
+// ── DRAW: high score screen ───────────────────
+void drawHighScoreScreen(){
     // GL built-in background + GLUT fonts
     glClearColor(0.05f,0.05f,0.2f,1); glClear(GL_COLOR_BUFFER_BIT);
-    glColor3f(1,.8f,0);
-    drawText(320,500,"DX  BALL",GLUT_BITMAP_TIMES_ROMAN_24);
-    // Bresenham Line decorative separator
-    glColor3f(0.5f,0.5f,1.0f); drawLineBres(280,488,520,488);
-    glColor3f(.3f,1,.3f);  drawText(340,430,"1.  START GAME",GLUT_BITMAP_HELVETICA_18);
-    glColor3f(.3f,.7f,1);  drawText(340,390,"2.  HIGH SCORE",GLUT_BITMAP_HELVETICA_18);
-    glColor3f(1,.9f,.3f);  drawText(340,350,"3.  HELP",GLUT_BITMAP_HELVETICA_18);
-    glColor3f(1,.4f,.4f);  drawText(340,310,"4.  EXIT",GLUT_BITMAP_HELVETICA_18);
-    glColor3f(.6f,.6f,.6f);
-    drawText(210,200,"Mouse / Arrow Keys  =  Move Paddle",GLUT_BITMAP_HELVETICA_12);
-    drawText(210,180,"SPACE or Click      =  Launch Ball",GLUT_BITMAP_HELVETICA_12);
-    drawText(210,160,"Z=Shoot  P=Pause  ESC=Exit",GLUT_BITMAP_HELVETICA_12);
-    // Midpoint Circle Algorithm decorative ball
-    glColor3f(1.0f,0.9f,0.0f); drawFilledCircle(400,560,15);
-    glColor3f(1,1,1); drawCircleMidpoint(400,560,15);
+    char buf[32];
+    glColor3f(1,.8f,0); drawText(295,410,"HIGH  SCORE",GLUT_BITMAP_TIMES_ROMAN_24);
+    // Bresenham Line separator
+    glColor3f(0.5f,0.5f,1.0f); drawLineBres(250,398,550,398);
+    glColor3f(.3f,1,.3f); sprintf(buf,"%d",highScore);
+    drawText(370,330,buf,GLUT_BITMAP_TIMES_ROMAN_24);
+    // Midpoint Circle Algorithm decoration
+    glColor3f(1,.9f,0); drawFilledCircle(400,240,30);
+    glColor3f(1,1,1);   drawCircleMidpoint(400,240,30);
+    glColor3f(.6f,.6f,.6f); drawText(300,150,"Press M to go back to Menu",GLUT_BITMAP_HELVETICA_18);
+}
+
+// ── DRAW: pause overlay ───────────────────────
+void drawPauseOverlay(){
+    // GL built-in GL_QUADS
+    glColor3f(0,0,0); fillRect(215,260,370,130);
+    glColor3f(.5f,.5f,.5f); outlineRect(215,260,370,130);
+    glColor3f(1,1,0); drawText(345,360,"PAUSED",GLUT_BITMAP_TIMES_ROMAN_24);
+    glColor3f(1,1,1);
+    drawText(240,320,"P=Resume  R=Restart  M=Menu",GLUT_BITMAP_HELVETICA_18);
+    drawText(315,288,"ESC = Exit",GLUT_BITMAP_HELVETICA_18);
+}
+
+// ── DRAW: game over screen ────────────────────
+void drawGameOverScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0.1f,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
+    char buf[64];
+    glColor3f(1.0f,0.2f,0.2f); drawText(295,370,"GAME  OVER",GLUT_BITMAP_TIMES_ROMAN_24);
+    glColor3f(1,1,1);
+    sprintf(buf,"Final Score :  %d",score); drawText(295,310,buf,GLUT_BITMAP_HELVETICA_18);
+    sprintf(buf,"High Score  :  %d",highScore); drawText(295,280,buf,GLUT_BITMAP_HELVETICA_18);
+    glColor3f(0.5f,1.0f,0.5f);
+    drawText(235,220,"R = Restart    M = Menu    ESC = Exit",GLUT_BITMAP_HELVETICA_18);
+}
+
+// ── DRAW: win screen ──────────────────────────
+void drawWinScreen(){
+    // GL built-in background + GLUT fonts
+    glClearColor(0,0.1f,0,1); glClear(GL_COLOR_BUFFER_BIT);
+    char buf[32];
+    glColor3f(0.2f,1.0f,0.4f); drawText(275,370,"YOU  WIN!  :D",GLUT_BITMAP_TIMES_ROMAN_24);
+    glColor3f(1,1,1); sprintf(buf,"Score:  %d",score); drawText(340,310,buf,GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1.0f,0.9f,0.0f);
+    drawText(225,250,"R = Play Again    M = Menu    ESC = Exit",GLUT_BITMAP_HELVETICA_18);
+}
+
+// ── GLUT display callback ─────────────────────
+void display(){
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+    if     (gameState==0) drawMenuScreen();
+    else if(gameState==5) drawHelpScreen();
+    else if(gameState==6) drawHighScoreScreen();
+    else if(gameState==1||gameState==2){
+        drawBackground(); drawBricks(); drawDropItems();
+        drawBullets(); drawPaddle(); drawBall(); drawHUD();
+        if(!ballMoving){glColor3f(.8f,.8f,.8f);drawText(265,75,"Press SPACE to launch ball!",GLUT_BITMAP_HELVETICA_12);}
+        if(gameState==2) drawPauseOverlay();
+    }
+    else if(gameState==3) drawGameOverScreen();
+    else if(gameState==4) drawWinScreen();
+    glutSwapBuffers();
+}
+
+// ── GLUT timer (~60 fps) ──────────────────────
+void gameTimer(int v){
+    if(gameState==1) updateGameLogic();
+    glutPostRedisplay();
+    glutTimerFunc(16,gameTimer,0);
 }
 
 // ── GLUT keyboard input ───────────────────────
@@ -258,35 +390,33 @@ void keyboardInput(unsigned char key,int x,int y){
     }
     glutPostRedisplay();
 }
-// ── DRAW: game over screen ────────────────────
-void drawGameOverScreen(){
-    // GL built-in background + GLUT fonts
-    glClearColor(0.1f,0,0,1); glClear(GL_COLOR_BUFFER_BIT);
-    char buf[64];
-    glColor3f(1.0f,0.2f,0.2f); drawText(295,370,"GAME  OVER",GLUT_BITMAP_TIMES_ROMAN_24);
-    glColor3f(1,1,1);
-    sprintf(buf,"Final Score :  %d",score); drawText(295,310,buf,GLUT_BITMAP_HELVETICA_18);
-    sprintf(buf,"High Score  :  %d",highScore); drawText(295,280,buf,GLUT_BITMAP_HELVETICA_18);
-    glColor3f(0.5f,1.0f,0.5f);
-    drawText(235,220,"R = Restart    M = Menu    ESC = Exit",GLUT_BITMAP_HELVETICA_18);
-}
- DRAW: high score screen 
-void drawHighScoreScreen(){
-    // GL built-in background + GLUT fonts
-    glClearColor(0.05f,0.05f,0.2f,1); glClear(GL_COLOR_BUFFER_BIT);
-    char buf[32];
-    glColor3f(1,.8f,0); drawText(295,410,"HIGH  SCORE",GLUT_BITMAP_TIMES_ROMAN_24);
-    // Bresenham Line separator
-    glColor3f(0.5f,0.5f,1.0f); drawLineBres(250,398,550,398);
-    glColor3f(.3f,1,.3f); sprintf(buf,"%d",highScore);
-    drawText(370,330,buf,GLUT_BITMAP_TIMES_ROMAN_24);
-    // Midpoint Circle Algorithm decoration
-    glColor3f(1,.9f,0); drawFilledCircle(400,240,30);
-    glColor3f(1,1,1);   drawCircleMidpoint(400,240,30);
-    glColor3f(.6f,.6f,.6f); drawText(300,150,"Press M to go back to Menu",GLUT_BITMAP_HELVETICA_18);
+
+// ── GLUT arrow key input ──────────────────────
+void arrowKeyInput(int key,int x,int y){
+    if(gameState==1){
+        if(key==GLUT_KEY_LEFT) {paddleX-=20;if(paddleX<0)paddleX=0;}
+        if(key==GLUT_KEY_RIGHT){paddleX+=20;if(paddleX+paddleW>WIN_W)paddleX=WIN_W-paddleW;}
+    }
+    glutPostRedisplay();
 }
 
+// ── GLUT mouse motion ─────────────────────────
+void mouseMoveInput(int x,int y){
+    if(gameState==1||gameState==2){
+        paddleX=x-paddleW/2;
+        if(paddleX<0) paddleX=0;
+        if(paddleX+paddleW>WIN_W) paddleX=WIN_W-paddleW;
+    }
+    glutPostRedisplay();
+}
 
+// ── GLUT mouse click ──────────────────────────
+void mouseClickInput(int btn,int state,int x,int y){
+    if(gameState==1&&btn==GLUT_LEFT_BUTTON&&state==GLUT_DOWN)
+        ballMoving=1;
+}
+
+// ── MAIN ──────────────────────────────────────
 int main(int argc,char**argv){
     srand((unsigned)time(NULL));
     glutInit(&argc,argv);
@@ -295,6 +425,14 @@ int main(int argc,char**argv){
     glutInitWindowPosition(100,50);
     glutCreateWindow("DX Ball - CSE 426");
     openGLInit();
-     glutMainLoop();
+    startNewGame();
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboardInput);
+    glutSpecialFunc(arrowKeyInput);
+    glutPassiveMotionFunc(mouseMoveInput);
+    glutMotionFunc(mouseMoveInput);
+    glutMouseFunc(mouseClickInput);
+    glutTimerFunc(16,gameTimer,0);
+    glutMainLoop();
     return 0;
 }
