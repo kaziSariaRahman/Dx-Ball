@@ -68,6 +68,76 @@ void outlineRect(float x,float y,float w,float h){
     glEnd();
 }
 
+// ── Helper: draw text (GLUT built-in) ─────────
+void drawText(float x,float y,const char*s,void*font){
+    // GLUT built-in
+    glRasterPos2f(x,y);
+    for(int i=0;s[i];i++) glutBitmapCharacter(font,s[i]);
+}
+
+// ── DRAW: background ──────────────────────────
+void drawBackground(){
+    // GL built-in GL_QUADS gradient
+    glBegin(GL_QUADS);
+    glColor3f(0.05f,0.05f,0.15f); glVertex2f(0,0);
+    glColor3f(0.05f,0.05f,0.15f); glVertex2f(WIN_W,0);
+    glColor3f(0.1f,0.1f,0.3f);    glVertex2f(WIN_W,WIN_H);
+    glColor3f(0.1f,0.1f,0.3f);    glVertex2f(0,WIN_H);
+    glEnd();
+    // Bresenham Line for borders
+    glColor3f(0.5f,0.5f,0.9f); glLineWidth(2);
+    drawLineBres(0,0,0,WIN_H);
+    drawLineBres(WIN_W-1,0,WIN_W-1,WIN_H);
+    drawLineBres(0,WIN_H-1,WIN_W,WIN_H-1);
+    glLineWidth(1);
+}
+
+// ── DRAW: ball ────────────────────────────────
+void drawBall(){
+    if(fireMode){
+        // Midpoint Circle outline + filled for fireball
+        glColor3f(1.0f,0.3f,0.0f); drawFilledCircle(ballX,ballY,ballR);
+        glColor3f(1.0f,1.0f,0.0f); drawCircleMidpoint((int)ballX,(int)ballY,(int)ballR);
+        glColor3f(1.0f,0.9f,0.0f); drawFilledCircle(ballX,ballY,ballR*0.5f);
+    } else {
+        // Midpoint Circle Algorithm for outline
+        glColor3f(1.0f,0.9f,0.0f); drawFilledCircle(ballX,ballY,ballR);
+        glColor3f(1.0f,1.0f,1.0f); drawCircleMidpoint((int)ballX,(int)ballY,(int)ballR);
+        glColor3f(1.0f,1.0f,1.0f); drawFilledCircle(ballX,ballY,ballR*0.28f);
+    }
+}
+
+// ── DRAW: bricks ──────────────────────────────
+void drawBricks(){
+    // GL built-in GL_QUADS for each brick
+    float colors[ROWS][3]={
+        {0.75f,0.75f,0.75f},
+        {1.0f,0.2f,0.2f},
+        {1.0f,0.6f,0.0f},
+        {1.0f,1.0f,0.0f},
+        {0.2f,0.8f,0.2f},
+        {0.2f,0.6f,1.0f}
+    };
+    for(int r=0;r<ROWS;r++){
+        for(int c=0;c<COLS;c++){
+            if(!bType[r][c]) continue;
+            float bx=BX0+c*(BW+4),by=BY0-r*(BH+4);
+            float cr=colors[r][0],cg=colors[r][1],cb=colors[r][2];
+            if(bType[r][c]==2){
+                float f=bHP[r][c]/3.0f;
+                cr=0.3f+0.5f*f; cg=0.3f+0.5f*f; cb=0.3f+0.5f*f;
+            }
+            glColor3f(cr,cg,cb); fillRect(bx,by,BW,BH);
+            glColor3f(0,0,0);    outlineRect(bx,by,BW,BH);
+            if(bType[r][c]==2){
+                char hp[4]; sprintf(hp,"%d",bHP[r][c]);
+                glColor3f(1,1,1);
+                drawText(bx+BW/2-4,by+5,hp,GLUT_BITMAP_HELVETICA_12);
+            }
+        }
+    }
+}
+
 
 // ── OpenGL init ───────────────────────────────
 void openGLInit(){
