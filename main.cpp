@@ -146,6 +146,30 @@ void openGLInit(){
     gluOrtho2D(0,WIN_W,0,WIN_H);
     glMatrixMode(GL_MODELVIEW);  glLoadIdentity();
 }
+// ── DRAW: drop items ──────────────────────────
+void drawDropItems(){
+    // GL built-in GL_QUADS
+    const char*names[]={"","FIRE","THRU","DIE!","SHRK","SHOT","+LIF","EXP"};
+    float dc[8][3]={{0,0,0},{1,.4f,0},{.4f,.4f,1},{1,0,0},{.8f,0,.8f},{0,1,1},{0,1,0},{1,1,0}};
+    for(int i=0;i<MAX_DROPS;i++){
+        if(!dAlive[i]) continue;
+        int t=dType[i];
+        glColor3f(dc[t][0],dc[t][1],dc[t][2]); fillRect(dX[i]-20,dY[i]-8,40,16);
+        glColor3f(0,0,0); outlineRect(dX[i]-20,dY[i]-8,40,16);
+        glColor3f(0,0,0); drawText(dX[i]-16,dY[i]-4,names[t],GLUT_BITMAP_HELVETICA_10);
+    }
+}
+
+// ── DRAW: bullets ─────────────────────────────
+void drawBullets(){
+    // GL built-in GL_QUADS
+    glColor3f(1,1,0);
+    for(int i=0;i<MAX_BULLETS;i++){
+        if(!bltAlive[i]) continue;
+        fillRect(bltX[i]-2,bltY[i],4,10);
+    }
+}
+
 // ── DRAW: help screen ─────────────────────────
 void drawHelpScreen(){
     // GL built-in background + GLUT fonts
