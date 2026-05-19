@@ -5,6 +5,55 @@
 #include <time.h>
 #include <string.h>
 
+// ─── WINDOW ───────────────────────────────────
+int WIN_W = 800, WIN_H = 600;
+
+// ─── GAME STATE ───────────────────────────────
+// 0=MENU 1=PLAYING 2=PAUSED 3=GAMEOVER 4=WIN 5=HELP 6=HIGHSCORE
+int gameState = 0;
+
+// ─── PADDLE ───────────────────────────────────
+float paddleX=350, paddleY=30, paddleW=100, paddleH=14;
+int   shootMode=0, shootTimer=0;
+
+// ─── BALL ─────────────────────────────────────
+float ballX=400, ballY=60, ballR=10;
+float ballSX=3.5f, ballSY=4.5f;
+int   ballMoving=0;
+int   fireMode=0, fireTimer=0;
+int   thruMode=0, thruTimer=0;
+
+// ─── BRICKS ───────────────────────────────────
+#define ROWS 6
+#define COLS 10
+#define BW   68
+#define BH   22
+#define BX0  26
+#define BY0  430
+int bType[ROWS][COLS];
+int bHP[ROWS][COLS];
+int totalNormal=0, remaining=0;
+
+// ─── DROPS ────────────────────────────────────
+#define MAX_DROPS 5
+float dX[MAX_DROPS], dY[MAX_DROPS];
+int   dType[MAX_DROPS], dAlive[MAX_DROPS];
+
+// ─── BULLETS ──────────────────────────────────
+#define MAX_BULLETS 8
+float bltX[MAX_BULLETS], bltY[MAX_BULLETS];
+int   bltAlive[MAX_BULLETS];
+
+// ─── SCORE ────────────────────────────────────
+int score=0, lives=3, highScore=0;
+
+// ─── NOTIFICATION ─────────────────────────────
+char notifMsg[64]="";
+int  notifTime=0;
+
+// ══════════════════════════════════════════════
+// ██  Ishtiak
+// ══════════════════════════════════════════════
 
 // ── Bresenham Line Drawing Algorithm ──────────
 void drawLineBres(int x1,int y1,int x2,int y2){
@@ -138,6 +187,114 @@ void drawBricks(){
     }
 }
 
+// ── UPDATE: ball-brick collision ──────────────
+void checkBallBrickCollision(){
+    for(int r=0;r<ROWS;r++){
+        for(int c=0;c<COLS;c++){
+            if(!bType[r][c]) continue;
+            float bx=BX0+c*(BW+4),by=BY0-r*(BH+4);
+            float cx=ballX<bx?bx:(ballX>bx+BW?bx+BW:ballX);
+            float cy=ballY<by?by:(ballY>by+BH?by+BH:ballY);
+            float ddx=ballX-cx,ddy=ballY-cy;
+            if(ddx*ddx+ddy*ddy>ballR*ballR) continue;
+            bHP[r][c]--;
+            if(bHP[r][c]<=0){
+                if(bType[r][c]==1){remaining--;score+=(5-r)*10;}
+                else score+=5;
+                if(rand()%10<4){
+                    for(int i=0;i<MAX_DROPS;i++){
+                        if(!dAlive[i]){dX[i]=bx+BW/2;dY[i]=by;dType[i]=1+rand()%7;dAlive[i]=1;break;}
+                    }
+                }
+                bType[r][c]=0;
+                if(score>highScore) highScore=score;
+                if(remaining==0){gameState=4;return;}
+            }
+            if(fireMode||thruMode) return;
+            // bounce
+            if(fabs(ddx)>fabs(ddy)) ballSX=-ballSX;
+            else                     ballSY=-ballSY;
+            // 2D Transformation: scale velocity vector on every 5 bricks
+            int destroyed=totalNormal-remaining;
+            if(destroyed>0&&destroyed%5==0){
+                float spd=sqrt(ballSX*ballSX+ballSY*ballSY);
+                if(spd<10){ballSX*=1.08f;ballSY*=1.08f;}
+            }
+            return;
+        }
+    }
+}
+
+// ── UPDATE: main game logic ───────────────────
+void updateGameLogic(){
+    // perk timers
+    if(fireTimer>0){fireTimer--;if(!fireTimer)fireMode=0;}
+    if(thruTimer>0){thruTimer--;if(!thruTimer)thruMode=0;}
+    if(shootTimer>0){shootTimer--;if(!shootTimer)shootMode=0;}
+    if(notifTime>0) notifTime--;
+    // drops fall
+    for(int i=0;i<MAX_DROPS;i++){
+        if(!dAlive[i]) continue;
+        dY[i]-=2.0f;
+        if(dY[i]>=paddleY&&dY[i]<=paddleY+paddleH&&dX[i]>=paddleX&&dX[i]<=paddleX+paddleW){
+            int t=dType[i];
+            if(t==1){fireMode=1;fireTimer=300;strncpy(notifMsg,"FIREBALL!",63);notifTime=120;}
+            if(t==2){thruMode=1;thruTimer=300;strncpy(notifMsg,"THROUGH BRICK!",63);notifTime=120;}
+            if(t==3){lives--;strncpy(notifMsg,"DEATH! -1 Life",63);notifTime=120;if(lives<=0)gameState=3;}
+            if(t==4){if(paddleW>40)paddleW-=30;strncpy(notifMsg,"SHRUNK!",63);notifTime=120;}
+            if(t==5){shootMode=1;shootTimer=400;strncpy(notifMsg,"SHOOT! Press Z",63);notifTime=120;}
+            if(t==6){lives++;strncpy(notifMsg,"+1 LIFE!",63);notifTime=120;}
+            if(t==7){if(paddleW<180)paddleW+=30;strncpy(notifMsg,"EXPANDED!",63);notifTime=120;}
+            dAlive[i]=0;
+        }
+        if(dY[i]<0) dAlive[i]=0;
+    }
+    // bullets move up
+    for(int i=0;i<MAX_BULLETS;i++){
+        if(!bltAlive[i]) continue;
+        bltY[i]+=8.0f;
+        if(bltY[i]>WIN_H){bltAlive[i]=0;continue;}
+        for(int r=0;r<ROWS;r++){
+            for(int c=0;c<COLS;c++){
+                if(!bType[r][c]) continue;
+                float bx=BX0+c*(BW+4),by=BY0-r*(BH+4);
+                if(bltX[i]>=bx&&bltX[i]<=bx+BW&&bltY[i]>=by&&bltY[i]<=by+BH){
+                    bHP[r][c]--;
+                    if(bHP[r][c]<=0){
+                        if(bType[r][c]==1){remaining--;score+=10;}
+                        else score+=5;
+                        bType[r][c]=0;
+                        if(score>highScore)highScore=score;
+                        if(remaining==0){gameState=4;return;}
+                    }
+                    bltAlive[i]=0; goto skip;
+                }
+            }
+        }
+        skip:;
+    }
+    // ball movement
+    if(!ballMoving){ballX=paddleX+paddleW/2;ballY=paddleY+paddleH+ballR+1;return;}
+    ballX+=ballSX; ballY+=ballSY;
+    if(ballX-ballR<=0)      {ballX=ballR;      ballSX= fabs(ballSX);}
+    if(ballX+ballR>=WIN_W)  {ballX=WIN_W-ballR;ballSX=-fabs(ballSX);}
+    if(ballY+ballR>=WIN_H)  {ballY=WIN_H-ballR;ballSY=-fabs(ballSY);}
+    if(ballY-ballR<=0){
+        lives--; if(lives<=0){gameState=3;return;}
+        ballX=paddleX+paddleW/2;ballY=paddleY+paddleH+ballR+1;
+        ballSX=3.5f;ballSY=4.5f;ballMoving=0;
+        fireMode=0;fireTimer=0;thruMode=0;thruTimer=0;
+        return;
+    }
+    // paddle bounce — 2D Transformation: translate hit position to angle
+    if(ballY-ballR<=paddleY+paddleH&&ballY+ballR>=paddleY&&
+       ballX>=paddleX&&ballX<=paddleX+paddleW&&ballSY<0){
+        ballSY=fabs(ballSY);
+        float hit=(ballX-paddleX)/paddleW;
+        ballSX=(hit-0.5f)*9.0f;
+    }
+    checkBallBrickCollision();
+}
 
 // ── OpenGL init ───────────────────────────────
 void openGLInit(){
