@@ -37,5 +37,60 @@
 *.out
 *.app
 
-# debug information files
+# Debug information files
 *.dwo
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor files
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Build directories
+# =========================
+build/
+bin/
+obj/
+out/
+cmake-build-*/
+CMakeFiles/
+
+# =========================
+# CMake files
+# =========================
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary / Backup
+# =========================
+*.tmp
+*.bak
+*~
+*.orig
+
+# =========================
+# Core dumps
+# =========================
+core
+core.*
+
+# =========================
+# Misc
+# =========================
+*.stackdump
